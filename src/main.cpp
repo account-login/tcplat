@@ -54,6 +54,21 @@ struct Argument {
     {}
 };
 
+static void usage() {
+    const char *text =
+        "Usage: tcpdump -n -w - -c 1000 host 127.0.0.1 and port 9092 |tcplat -s 127.0.0.1:9092 -p -S -d1\n"
+        "Arguments:\n"
+        "   -s, --server IP:PORT\n"
+        "       server address.\n"
+        "   -p, --percentile\n"
+        "       show percentile.\n"
+        "   -S, --sample\n"
+        "       show sample request.\n"
+        "   -d, --delay SECONDS\n"
+        "       periodic output.\n";
+    fputs(text, stdout);
+}
+
 static Argument get_args(int argc, char *argv[]) {
     Argument arg;
 
@@ -62,6 +77,7 @@ static Argument get_args(int argc, char *argv[]) {
         struct option long_options[] = {
             /* These options don’t set a flag.
                 We distinguish them by their indices. */
+            {"help",  no_argument, 0, 'h'},
             {"server",  required_argument, 0, 's'},
             {"percentile", no_argument, 0, 'p'},
             {"sample", no_argument, 0, 'S'},
@@ -71,7 +87,7 @@ static Argument get_args(int argc, char *argv[]) {
 
         /* getopt_long stores the option index here. */
         int option_index = 0;
-        int c = getopt_long(argc, argv, "s:pSd:", long_options, &option_index);
+        int c = getopt_long(argc, argv, "hs:pSd:", long_options, &option_index);
         /* Detect the end of the options. */
         if (c == -1)
             break;
@@ -91,15 +107,13 @@ static Argument get_args(int argc, char *argv[]) {
             break;
         case '?':
             /* getopt_long already printed an error message. */
+            // fallthrough
+        case 'h':
+            // fallthrough
         default:
-            // TODO: help
-            ;
+            usage();
+            exit(1);
         }
-
-        /* Print any remaining command line arguments (not options). */
-        // while (optind < argc) {
-        //     printf ("%s ", argv[optind++]);
-        // }
     }
 
     return arg;
@@ -269,6 +283,10 @@ static void output(const Argument &arg, const Analyzer &an) {
         print_percentile(arg, an);
     }
 }
+
+// TODO: capture with pcap
+// TODO: remove pcap++ dependency
+// TODO: allow multiple servers
 
 int main(int argc, char* argv[]) {
     // parse args
